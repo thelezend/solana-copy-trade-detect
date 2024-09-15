@@ -1,0 +1,27 @@
+[package]
+name = "solana-copy-trade-detect"
+version = "0.1.0"
+edition = "2021"
+description = "Detects if a given Solana wallet is copy trading."
+
+[dependencies]
+cielo-rs-sdk = "0.1.0"
+clap = { version = "4.5.17", features = ["derive", "env"] }
+dotenvy = "0.15.7"
+serde = "1.0.210"
+serde_json = "1.0.128"
+shyft-rs-sdk = "0.1.3"
+solana-sdk = "2.0.9"
+thiserror = "1.0.63"
+tokio = { version = "1.40.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+[patch.crates-io]
+# curve25519-dalek 3.x pin zeroize to <1.4
+# which conflicts with other dependencies requiring zeroize ^1.5.
+# We’re patching the crate to unpin zeroize.
+
+# For curve25519-dalek we’re using commit from a PR, see
+# https://github.com/dalek-cryptography/curve25519-dalek/pull/606
+curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek", rev = "8274d5cbb6fc3f38cdc742b4798173895cd2a290" }
