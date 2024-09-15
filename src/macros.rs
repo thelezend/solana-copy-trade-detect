@@ -6,12 +6,6 @@
 ///
 /// This macro checks if the standard output is a terminal and prints the
 /// formatted string if it is. It uses the `println!` macro internally.
-///
-/// # Examples
-///
-/// ```
-/// print_if_terminal!("Hello, world!");
-/// ```
 #[macro_export]
 macro_rules! print_if_terminal {
     ($($arg:tt)*) => {

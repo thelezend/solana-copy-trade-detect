@@ -11,6 +11,8 @@ use solana_copy_trade_detect::{Args, PrevBuy};
 async fn main() {
     dotenvy::dotenv().ok();
 
+    dotenvy::from_filename(".env.test").ok();
+
     let args = Args::parse();
     let result = solana_copy_trade_detect::run(&args).await;
 
@@ -23,7 +25,7 @@ async fn main() {
                 write_to_file(repeating_wallets, &file_path).expect("Failed to write to file");
                 println!("Output written to {}", file_path.display());
             } else {
-                println!("{}", serde_json::json!(repeating_wallets));
+                println!("{:?}", repeating_wallets);
             }
         }
         Err(e) => {

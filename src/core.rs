@@ -36,9 +36,11 @@ pub async fn run(args: &crate::Args) -> Result<Vec<(String, Vec<PrevBuy>)>, crat
     let fresh_swaps = fetch_fresh_swaps(args).await?;
     print_if_terminal!("Fetched {} fresh swaps", fresh_swaps.len());
 
+    let shyft_api = ShyftApi::new(&args.shyft_api_key, None, None, None, None, None)?;
+
     for item in fresh_swaps.iter() {
         if let models::feed::Item::Swap(swap) = item {
-            let prev_buys = fetch_prev_buys(args, swap).await?;
+            let prev_buys = fetch_prev_buys(args, &shyft_api, swap).await?;
 
             for buy in prev_buys.iter() {
                 let raw_tx = buy.raw.as_ref().expect("raw tx data not found");
@@ -98,22 +100,23 @@ async fn fetch_fresh_swaps(
 
 /// Fetches previous buy transactions for a given swap.
 ///
-/// This function initializes a new Shyft API client and fetches the transaction history
-/// for the specified swap based on the provided arguments.
+/// This function retrieves the transaction history for the specified token address
+/// and filters the transactions to include only those that involve a swap where SOL is the input token.
 ///
 /// # Arguments
 ///
-/// * `args` - A reference to the arguments containing the API key and other parameters.
-/// * `swap` - A reference to the swap for which to fetch the previous buy transactions.
+/// * `args` - A reference to the arguments containing the API key, wallet address, and other parameters.
+/// * `shyft_api` - A reference to the Shyft API client.
+/// * `swap` - A reference to the swap transaction details.
 ///
 /// # Errors
 ///
-/// This function will return an error if the Shyft API client could not be built or the request fails.
+/// This function will return an error if the Shyft API request fails.
 async fn fetch_prev_buys(
     args: &crate::Args,
+    shyft_api: &ShyftApi,
     swap: &models::feed::Swap,
 ) -> Result<Vec<ParsedTransactionDetails>, shyft_rs_sdk::Error> {
-    let shyft_api = ShyftApi::new(&args.shyft_api_key, None, None, None, None, None)?;
     Ok(filter_buys(
         shyft_api
             .get_transaction_history(
