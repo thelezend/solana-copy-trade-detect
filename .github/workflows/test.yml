@@ -36,6 +36,6 @@ jobs:
               with:
                   tag_name: latest
                   files: |
-                      target/release/solana-copy-trade-detect
+                      solana-copy-trade-detect
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
