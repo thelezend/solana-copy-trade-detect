@@ -17,8 +17,11 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Run lint checks
+            - name: Run clippy lint checks
               run: cargo clippy -- -D warnings
+
+            - name: Run documentation lint checks
+              run: cargo doc --no-deps --document-private-items
 
     build:
         strategy:
@@ -46,14 +49,3 @@ jobs:
                   SHYFT_API_KEY: ${{ secrets.SHYFT_API_KEY }}
                   CIELO_API_KEY: ${{ secrets.CIELO_API_KEY }}
               run: cargo test --verbose
-
-    docs:
-        needs: build
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-
-            - name: Run docs
-              run: cargo doc --verbose
