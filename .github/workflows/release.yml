@@ -46,7 +46,7 @@ jobs:
               with:
                   tag_name: latest
                   files: |
-                      target/release/solana-copy-trade-detect
+                      release-build-ubuntu-latest
                       target/release/solana-copy-trade-detect.exe
                       target/release/solana-copy-trade-detect
               env:
