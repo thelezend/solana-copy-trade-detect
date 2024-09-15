@@ -5,12 +5,13 @@
 //! The main function in this module is `run`, which orchestrates the fetching and processing
 //! of fresh swap transactions and their previous buy transactions to detect copy trading wallets.
 
-use std::{collections::HashMap, io::IsTerminal, str::FromStr, time::Duration};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use cielo_rs_sdk::{
     api::feed::{Filters, TxType},
     models, CieloApi,
 };
+use indicatif::{ProgressBar, ProgressStyle};
 use shyft_rs_sdk::{
     models::parsed_transaction_details::{self, ParsedTransactionDetails},
     ShyftApi,
@@ -19,7 +20,7 @@ use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcTransacti
 use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
 use solana_transaction_status::UiTransactionEncoding;
 
-use crate::{print_if_terminal, PrevBuy, RepeatingWallet};
+use crate::{PrevBuy, RepeatingWallet};
 
 /// Runs the main logic of the solana-copy-trade-detect application.
 ///
@@ -36,8 +37,31 @@ use crate::{print_if_terminal, PrevBuy, RepeatingWallet};
 pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Error> {
     let mut prev_wallets = HashMap::new();
 
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(ProgressStyle::with_template("{spinner:.green} {msg}").unwrap());
+    spinner.enable_steady_tick(Duration::from_millis(120));
+    spinner.set_message(format!(
+        "{} {}Fetching fresh swaps...",
+        console::style("[1/3]").bold().dim(),
+        crate::LIGHTNING,
+    ));
+
     let fresh_swaps = fetch_fresh_swaps(args).await?;
-    print_if_terminal!("Fetched {} fresh swaps", fresh_swaps.len());
+    spinner.finish();
+
+    let progress_bar = ProgressBar::new(fresh_swaps.len() as u64);
+    progress_bar.set_style(
+        ProgressStyle::with_template(
+            "{spinner:.green} {msg} [{wide_bar:.green/magenta}] {percent}%",
+        )
+        .unwrap(),
+    );
+    progress_bar.enable_steady_tick(Duration::from_millis(120));
+    progress_bar.set_message(format!(
+        "{} {}Scanning transaction history...",
+        console::style("[2/3]").bold().dim(),
+        crate::SCAN,
+    ));
 
     let shyft_api = ShyftApi::new(&args.shyft_api_key, None, None, None, None, None)?;
 
@@ -57,7 +81,7 @@ pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Erro
             let prev_buys = fetch_prev_buys(args, &shyft_api, swap).await?;
 
             for buy in prev_buys.iter() {
-                let block_diff = get_block_diff(&rpc_client, swap, buy).await?;
+                let block_diff = get_block_diff(&rpc_client, swap, buy, args.delay_ms).await?;
                 prev_wallets
                     .entry(buy.fee_payer.to_owned())
                     .or_insert_with(Vec::new)
@@ -65,12 +89,14 @@ pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Erro
                         tx_hash: buy.signatures[0].to_owned(),
                         block_diff,
                     });
-
-                // Sleep to avoid rate limit
-                tokio::time::sleep(tokio::time::Duration::from_millis(args.delay_ms)).await;
             }
+            // Sleep to avoid rate limit
+            tokio::time::sleep(tokio::time::Duration::from_millis(args.delay_ms)).await;
         }
+        progress_bar.inc(1);
     }
+
+    progress_bar.finish();
 
     // Retain only wallets with more than one repeating previous buy
     prev_wallets.retain(|_, buys| buys.len() > 1);
@@ -169,11 +195,16 @@ fn filter_buys(txs: Vec<ParsedTransactionDetails>) -> Vec<ParsedTransactionDetai
 
 /// Calculates the block difference between a fresh swap and a previous buy transaction.
 ///
+/// This function fetches the block number of the previous buy transaction and compares it with the
+/// block number of the fresh swap. If the block number of the fresh swap is not available, it fetches
+/// it from the Solana RPC client.
+///
 /// # Arguments
 ///
 /// * `rpc_client` - A reference to the Solana RPC client.
 /// * `fresh_swap` - A reference to the fresh swap transaction details.
 /// * `prev_buy` - A reference to the previous buy transaction details.
+/// * `delay_ms` - The delay in milliseconds before fetching the fresh swap block number.
 ///
 /// # Errors
 ///
@@ -182,6 +213,7 @@ async fn get_block_diff(
     rpc_client: &RpcClient,
     fresh_swap: &models::feed::Swap,
     prev_buy: &ParsedTransactionDetails,
+    delay_ms: u64,
 ) -> Result<u64, solana_client::client_error::ClientError> {
     let raw_tx = prev_buy.raw.as_ref().expect("raw tx data not found");
     let prev_buy_block = raw_tx["slot"].as_u64().expect("slot not found");
@@ -202,6 +234,7 @@ async fn get_block_diff(
             )
             .await?
             .slot;
+        tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
         Ok(fresh_swap_block - prev_buy_block)
     }
 }

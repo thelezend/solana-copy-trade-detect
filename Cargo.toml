@@ -7,7 +7,9 @@ description = "Detects if a given Solana wallet is copy trading."
 [dependencies]
 cielo-rs-sdk = "0.1.0"
 clap = { version = "4.5.17", features = ["derive", "env"] }
+console = "0.15.8"
 dotenvy = "0.15.7"
+indicatif = "0.17.8"
 serde = "1.0.210"
 serde_json = "1.0.128"
 shyft-rs-sdk = "0.1.3"

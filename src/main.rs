@@ -2,9 +2,11 @@ use std::{
     fs::File,
     io::{self, BufWriter, IsTerminal, Write},
     path::PathBuf,
+    time::Duration,
 };
 
 use clap::Parser;
+use indicatif::{ProgressBar, ProgressStyle};
 use solana_copy_trade_detect::{Args, RepeatingWallet};
 
 #[tokio::main]
@@ -22,8 +24,21 @@ async fn main() {
                 let file_path = args
                     .output_file
                     .unwrap_or(PathBuf::from(format!("{}.txt", args.wallet)));
+
+                let spinner = ProgressBar::new_spinner();
+                spinner.set_style(ProgressStyle::with_template("{spinner:.green} {msg}").unwrap());
+                spinner.enable_steady_tick(Duration::from_millis(120));
+                spinner.set_message(format!(
+                    "{} {}Writing output to {}",
+                    console::style("[3/3]").bold().dim(),
+                    solana_copy_trade_detect::FILE,
+                    file_path.display()
+                ));
+
                 write_to_file(repeating_wallets, &file_path).expect("Failed to write to file");
-                println!("Output written to {}", file_path.display());
+                spinner.finish();
+
+                println!("{}Done!", solana_copy_trade_detect::CHECK);
             } else {
                 println!("{}", serde_json::to_string(&repeating_wallets).unwrap());
             }
@@ -60,7 +75,6 @@ fn write_to_file(
         "Detected {} potential copy trading wallets",
         repeating_wallets.len()
     )?;
-    writeln!(writer, "----------------------------------------")?;
 
     for item in repeating_wallets {
         writeln!(writer, "----------------------------------------")?;

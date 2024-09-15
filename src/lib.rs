@@ -15,8 +15,18 @@ mod error;
 mod macros;
 
 pub use args::Args;
+use console::Emoji;
 pub use core::run;
 pub use error::Error;
+
+/// Emoji for file representation.
+pub static FILE: Emoji<'_, '_> = Emoji("📝", "");
+/// Emoji for check representation.
+pub static CHECK: Emoji<'_, '_> = Emoji("✅", "");
+/// Emoji for lightning representation.
+static LIGHTNING: Emoji<'_, '_> = Emoji("⚡️", "");
+/// Emoji for scanning representation.
+static SCAN: Emoji<'_, '_> = Emoji("🔍", "");
 
 /// Represents a repeating wallet with its transactions.
 #[derive(Debug, Clone, serde::Serialize)]
