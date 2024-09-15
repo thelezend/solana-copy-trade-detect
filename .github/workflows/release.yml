@@ -1,0 +1,52 @@
+name: Release
+
+on: workflow_dispatch
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Build project
+              run: cargo build --release
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: release-build-${{ matrix.os }}
+                  path: |
+                      target/release/solana-copy-trade-detect${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+
+    release:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download Ubuntu build
+              uses: actions/download-artifact@v4
+              with:
+                  name: release-build-ubuntu-latest
+
+            - name: Download Windows build
+              uses: actions/download-artifact@v4
+              with:
+                  name: release-build-windows-latest
+
+            - name: Download macOS build
+              uses: actions/download-artifact@v4
+              with:
+                  name: release-build-macos-latest
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      target/release/solana-copy-trade-detect
+                      target/release/solana-copy-trade-detect.exe
+                      target/release/solana-copy-trade-detect
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

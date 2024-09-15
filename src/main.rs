@@ -72,7 +72,7 @@ fn write_to_file(
 
     writeln!(
         writer,
-        "Detected {} potential copy trading wallets",
+        "Detected {} potential copied wallets",
         repeating_wallets.len()
     )?;
 
