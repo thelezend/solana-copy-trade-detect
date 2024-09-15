@@ -15,11 +15,12 @@ fn basic() -> Result<(), Box<dyn std::error::Error>> {
         "--scan-tx-count",
         "30",
     ]);
-    cmd.assert().success();
+
+    let output = cmd.assert().success().get_output().clone();
+    println!("{:#?}", output);
 
     // Check if the output is valid JSON
-    let output = String::from_utf8(cmd.output()?.stdout)?;
-    let _repeating_wallets: Vec<String> = serde_json::from_str(&output)?;
-
+    let output = String::from_utf8(output.stdout)?;
+    serde_json::from_str::<serde_json::Value>(&output).expect("Failed to parse json");
     Ok(())
 }

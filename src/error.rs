@@ -14,4 +14,8 @@ pub enum Error {
     /// Error that occurs when there is an issue with the Shyft API.
     #[error("Shyft API error: {0}")]
     ShyftApi(#[from] shyft_rs_sdk::Error),
+
+    /// Error that occurs when there is an issue with the Solana RPC client.
+    #[error("Solana RPC client error: {0}")]
+    RpcClient(#[from] solana_client::client_error::ClientError),
 }

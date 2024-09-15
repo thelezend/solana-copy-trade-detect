@@ -5,13 +5,13 @@ use std::{
 };
 
 use clap::Parser;
-use solana_copy_trade_detect::{Args, PrevBuy};
+use solana_copy_trade_detect::{Args, RepeatingWallet};
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
 
-    dotenvy::from_filename(".env.test").ok();
+    // dotenvy::from_filename(".env.test").ok();
 
     let args = Args::parse();
     let result = solana_copy_trade_detect::run(&args).await;
@@ -25,7 +25,7 @@ async fn main() {
                 write_to_file(repeating_wallets, &file_path).expect("Failed to write to file");
                 println!("Output written to {}", file_path.display());
             } else {
-                println!("{:?}", repeating_wallets);
+                println!("{}", serde_json::to_string(&repeating_wallets).unwrap());
             }
         }
         Err(e) => {
@@ -35,34 +35,42 @@ async fn main() {
     }
 }
 
-/// Writes the repeating wallets and their previous buy transactions to a file.
+/// Writes the repeating wallets and their transactions to a file.
 ///
-/// This function creates a new file at the specified path and writes the wallet addresses,
-/// the number of transactions, and the signatures of the previous buy transactions.
+/// This function creates a new file at the specified path and writes the details
+/// of each repeating wallet, including the number of repeating transactions and their signatures.
 ///
 /// # Arguments
 ///
-/// * `repeating_wallets` - A vector of tuples containing wallet addresses and their previous buy transactions.
-/// * `file_path` - The path to the file where the data will be written.
+/// * `repeating_wallets` - A vector of repeating wallets with their transactions.
+/// * `file_path` - The path to the output file.
 ///
 /// # Errors
 ///
-/// This function will return an error if the file could not be created or written to.
+/// This function will return an error if the file cannot be created or written to.
 fn write_to_file(
-    repeating_wallets: Vec<(String, Vec<PrevBuy>)>,
+    repeating_wallets: Vec<RepeatingWallet>,
     file_path: &PathBuf,
 ) -> Result<(), io::Error> {
     let file = File::create(file_path)?;
     let mut writer = BufWriter::new(file);
 
-    for (wallet, prev_buys) in repeating_wallets {
-        writeln!(writer, "Wallet: {}", wallet)?;
+    writeln!(
+        writer,
+        "Detected {} potential copy trading wallets",
+        repeating_wallets.len()
+    )?;
+    writeln!(writer, "----------------------------------------")?;
+
+    for item in repeating_wallets {
+        writeln!(writer, "----------------------------------------")?;
+        writeln!(writer, "Wallet: {}", item.wallet)?;
+        writeln!(writer, "Number of copied swaps: {}", item.txs.len())?;
         writeln!(
             writer,
-            "Number of repeating transactions: {}",
-            prev_buys.len()
+            "Swaps: {}",
+            serde_json::to_string_pretty(&item.txs)?
         )?;
-        writeln!(writer, "Signatures: {:#?}", prev_buys)?;
         writer.flush()?;
     }
 

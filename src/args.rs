@@ -17,6 +17,9 @@ pub struct Args {
     /// Shyft API key.
     #[arg(short, long, env = "SHYFT_API_KEY")]
     pub shyft_api_key: String,
+    /// Solana RPC URL. The Shyft RPC endpoint is used by default if not provided.
+    #[arg(short, long, env = "RPC_URL")]
+    pub rpc_url: Option<String>,
     /// The wallet to scan.
     #[arg(short, long)]
     pub wallet: Pubkey,
@@ -24,7 +27,7 @@ pub struct Args {
     #[arg(long, default_value = "15", value_parser = clap::value_parser!(u32).range(1..=100))]
     pub swap_num: u32,
     /// Number of transactions to scan for each swap to detect repeated wallets (max 100).
-    #[arg(long, default_value = "100", value_parser = clap::value_parser!(u32).range(1..=100))]
+    #[arg(long, default_value = "50", value_parser = clap::value_parser!(u32).range(1..=100))]
     pub scan_tx_count: u32,
     /// Delay between Shyft API requests in milliseconds.
     #[arg(short, long, default_value = "500")]

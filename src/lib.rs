@@ -18,6 +18,15 @@ pub use args::Args;
 pub use core::run;
 pub use error::Error;
 
+/// Represents a repeating wallet with its transactions.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct RepeatingWallet {
+    /// The wallet address.
+    pub wallet: String,
+    /// The transactions.
+    pub txs: Vec<PrevBuy>,
+}
+
 /// Represents a previous buy transaction with its hash and block difference.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct PrevBuy {
