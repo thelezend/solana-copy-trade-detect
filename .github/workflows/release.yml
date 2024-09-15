@@ -80,6 +80,9 @@ jobs:
                   name: release-build-macos-latest
                   path: solana-copy-trade-detect-macos
 
+            - name: List files in the current directory
+              run: ls -al
+
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
