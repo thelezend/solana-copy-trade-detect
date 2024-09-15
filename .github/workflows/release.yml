@@ -21,15 +21,19 @@ jobs:
             - name: Check if version changed
               id: version_check
               run: |
-                  PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep '^version =' | awk -F\" '{print $2}')
                   CURR_VERSION=$(grep '^version =' Cargo.toml | awk -F\" '{print $2}')
-                  echo "Previous version: $PREV_VERSION"
                   echo "Current version: $CURR_VERSION"
                   echo "version=$CURR_VERSION" >> $GITHUB_OUTPUT
-                  if [ "$PREV_VERSION" != "$CURR_VERSION" ]; then
+                  if [ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]; then
                     echo "version_changed=true" >> $GITHUB_OUTPUT
                   else
-                    echo "version_changed=false" >> $GITHUB_OUTPUT
+                    PREV_VERSION=$(git show HEAD~1:Cargo.toml | grep '^version =' | awk -F\" '{print $2}')
+                    echo "Previous version: $PREV_VERSION"
+                    if [ "$PREV_VERSION" != "$CURR_VERSION" ]; then
+                      echo "version_changed=true" >> $GITHUB_OUTPUT
+                    else
+                      echo "version_changed=false" >> $GITHUB_OUTPUT
+                    fi
                   fi
 
     build:
