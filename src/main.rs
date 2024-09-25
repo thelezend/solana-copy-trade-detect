@@ -7,13 +7,11 @@ use std::{
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use solana_copy_trade_detect::{Args, RepeatingWallet};
+use solana_copy_trade_detect::{get_spinner, Args, RepeatingWallet};
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-
-    // dotenvy::from_filename(".env.test").ok();
 
     let args = Args::parse();
     let result = solana_copy_trade_detect::run(&args).await;
@@ -25,10 +23,7 @@ async fn main() {
                     .output_file
                     .unwrap_or(PathBuf::from(format!("{}.txt", args.wallet)));
 
-                let spinner = ProgressBar::new_spinner();
-                spinner.set_style(ProgressStyle::with_template("{spinner:.green} {msg}").unwrap());
-                spinner.enable_steady_tick(Duration::from_millis(120));
-                spinner.set_message(format!(
+                let spinner = get_spinner!(format!(
                     "{} {}Writing output to {}",
                     console::style("[3/3]").bold().dim(),
                     solana_copy_trade_detect::FILE,
@@ -38,7 +33,7 @@ async fn main() {
                 write_to_file(repeating_wallets, &file_path).expect("Failed to write to file");
                 spinner.finish();
 
-                println!("{}Done!", solana_copy_trade_detect::CHECK);
+                println!("\t\t{}Done!", solana_copy_trade_detect::CHECK);
             } else {
                 println!("{}", serde_json::to_string(&repeating_wallets).unwrap());
             }

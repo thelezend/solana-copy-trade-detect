@@ -20,7 +20,7 @@ use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcTransacti
 use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
 use solana_transaction_status::UiTransactionEncoding;
 
-use crate::{PrevBuy, RepeatingWallet};
+use crate::{get_spinner, PrevBuy, RepeatingWallet};
 
 /// Runs the main logic of the solana-copy-trade-detect application.
 ///
@@ -37,15 +37,11 @@ use crate::{PrevBuy, RepeatingWallet};
 pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Error> {
     let mut prev_wallets = HashMap::new();
 
-    let spinner = ProgressBar::new_spinner();
-    spinner.set_style(ProgressStyle::with_template("{spinner:.green} {msg}").unwrap());
-    spinner.enable_steady_tick(Duration::from_millis(120));
-    spinner.set_message(format!(
+    let spinner = get_spinner!(format!(
         "{} {}Fetching fresh swaps...",
         console::style("[1/3]").bold().dim(),
         crate::LIGHTNING,
     ));
-
     let fresh_swaps = fetch_fresh_swaps(args).await?;
     spinner.finish();
 
