@@ -23,12 +23,6 @@ macro_rules! print_if_terminal {
 /// # Arguments
 ///
 /// * `$msg` - The message to display with the spinner.
-///
-/// # Example
-///
-/// ```
-/// let spinner = get_spinner!("Loading...");
-/// ```
 #[macro_export]
 macro_rules! get_spinner {
     ($msg:expr) => {{

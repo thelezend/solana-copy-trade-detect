@@ -3,6 +3,8 @@
 This crate provides functionality to detect if a given Solana wallet is copy trading.
 
 ```bash
+solana-copy-trade-detect --help
+
 Detects if a given Solana wallet is copy trading.
 
 Usage: solana-copy-trade-detect [OPTIONS] --cielo-api-key <CIELO_API_KEY> --shyft-api-key <SHYFT_API_KEY> --wallet <WALLET>
