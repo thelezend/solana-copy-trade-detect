@@ -1,5 +1,7 @@
 # Solana Copy Trade Detect
 
+[![CI](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml/badge.svg)](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml)
+
 ## Introduction
 
 So, you've found a profitable Solana wallet after searching for hours on Dexscreener or Cielo and are ready to copy it. Why stop there? Take it a step further—analyze whether this wallet is copying another wallet or a group of wallets. Stay ahead of the competition and lead the way. This CLI program is built to help you do exactly that.
@@ -62,6 +64,7 @@ You can directly download the pre-built binary executable for your OS and archit
 - As of this writing, both Cielo and Shyft offer free tier options. Which should be more than enough for most users.
 
 Cielo: <https://build.cielo.finance/my-dashboard/plans>
+
 Shyft: <https://shyft.to/dashboard/overview>
 
 ## Configuration

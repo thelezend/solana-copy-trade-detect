@@ -3,6 +3,8 @@ name = "solana-copy-trade-detect"
 version = "0.1.0"
 edition = "2021"
 description = "Detects if a given Solana wallet is copy trading."
+authors = ["Lezend"]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 cielo-rs-sdk = "0.1.0"
