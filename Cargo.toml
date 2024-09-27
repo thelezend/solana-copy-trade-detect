@@ -1,6 +1,6 @@
 [package]
 name = "solana-copy-trade-detect"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Detects if a given Solana wallet is copy trading."
 authors = ["Lezend"]

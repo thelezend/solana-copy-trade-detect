@@ -3666,7 +3666,7 @@ dependencies = [
 
 [[package]]
 name = "solana-copy-trade-detect"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "assert_cmd",
  "cielo-rs-sdk",

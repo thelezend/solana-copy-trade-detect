@@ -45,6 +45,19 @@ pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Erro
     let fresh_swaps = fetch_fresh_swaps(args).await?;
     spinner.finish();
 
+    if fresh_swaps.is_empty() {
+        eprintln!(
+            "\n{}",
+            console::style("Error: Cielo API returned no swaps for the given wallet.")
+                .red()
+                .bold()
+        );
+        eprintln!("This may happen if the wallet is not on your watchlist or is a bot wallet that Cielo does not support. Please check the wallet page on Cielo.");
+        eprintln!("https://app.cielo.finance/profile/{}\n", args.wallet);
+        eprintln!("Exiting...");
+        std::process::exit(1);
+    }
+
     let progress_bar = ProgressBar::new(fresh_swaps.len() as u64);
     progress_bar.set_style(
         ProgressStyle::with_template(
