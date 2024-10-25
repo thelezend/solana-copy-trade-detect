@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml/badge.svg)](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml)
 
+> **IMPORTANT: This repository is no longer maintained. I have developed a more efficient solution that no longer depends on Cielo or Shyft APIs. While I am not sharing this method publicly, it is available for purchase. Feel free to contact me on Discord for further details.**
+
 ## Introduction
 
 So, you've found a profitable Solana wallet after searching for hours on Dexscreener or Cielo and are ready to copy it. Why stop there? Take it a step further—analyze whether this wallet is copying another wallet or a group of wallets. Stay ahead of the competition and lead the way. This CLI program is built to help you do exactly that.
