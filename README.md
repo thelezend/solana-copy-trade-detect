@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml/badge.svg)](https://github.com/thelezend/solana-copy-trade-detect/actions/workflows/ci.yml)
 
-> **IMPORTANT: This repository is no longer maintained. I have developed a more efficient solution that no longer depends on Cielo or Shyft APIs. While I am not sharing this method publicly, it is available for purchase. Feel free to contact me on Discord for further details.**
+> **IMPORTANT: I have developed a more efficient solution that no longer depends on Cielo or Shyft APIs. While I am not sharing this method publicly, it is available for purchase. Feel free to contact me on Discord for details.**
 
 ## Introduction
 
