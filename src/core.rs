@@ -16,11 +16,14 @@ use shyft_rs_sdk::{
     models::parsed_transaction_details::{self, ParsedTransactionDetails},
     ShyftApi,
 };
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
-use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
+use solana_client::{
+    nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
+    rpc_config::RpcTransactionConfig,
+};
+use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Signature};
 use solana_transaction_status::UiTransactionEncoding;
 
-use crate::{get_spinner, PrevBuy, RepeatingWallet};
+use crate::{error::PrevBuysFetchError, get_spinner, PrevBuy, RepeatingWallet};
 
 /// Runs the main logic of the solana-copy-trade-detect application.
 ///
@@ -44,6 +47,8 @@ pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Erro
     ));
     let fresh_swaps = fetch_fresh_swaps(args).await?;
     spinner.finish();
+
+    tracing::info!("Fetched {} fresh swaps", fresh_swaps.len());
 
     if fresh_swaps.is_empty() {
         eprintln!(
@@ -87,7 +92,10 @@ pub async fn run(args: &crate::Args) -> Result<Vec<RepeatingWallet>, crate::Erro
 
     for item in fresh_swaps.iter() {
         if let models::feed::Item::Swap(swap) = item {
-            let prev_buys = fetch_prev_buys(args, &shyft_api, swap).await?;
+            let prev_buys =
+                fetch_prev_buys(args, &rpc_client, &shyft_api, swap, args.delay_ms).await?;
+
+            tracing::info!("Fetched {} previous buys", prev_buys.len());
 
             for buy in prev_buys.iter() {
                 let block_diff = get_block_diff(&rpc_client, swap, buy, args.delay_ms).await?;
@@ -156,29 +164,99 @@ async fn fetch_fresh_swaps(
 /// # Arguments
 ///
 /// * `args` - A reference to the arguments containing the API key, wallet address, and other parameters.
+/// * `rpc_client` - A reference to the Solana RPC client.
 /// * `shyft_api` - A reference to the Shyft API client.
 /// * `swap` - A reference to the swap transaction details.
+/// * `delay_ms` - The delay in milliseconds between requests.
 ///
 /// # Errors
 ///
-/// This function will return an error if the Shyft API request fails.
+/// This function will return an error if the Shyft API request fails or if the transaction parsing fails.
 async fn fetch_prev_buys(
     args: &crate::Args,
+    rpc_client: &RpcClient,
     shyft_api: &ShyftApi,
     swap: &models::feed::Swap,
-) -> Result<Vec<ParsedTransactionDetails>, shyft_rs_sdk::Error> {
-    Ok(filter_buys(
-        shyft_api
-            .get_transaction_history(
-                &swap.token1_address,
-                Some(args.scan_tx_count),
-                Some(&swap.tx_hash),
-                None,
-                Some(true),
-                None,
+    delay_ms: u64,
+) -> Result<Vec<ParsedTransactionDetails>, PrevBuysFetchError> {
+    let successful_signatures =
+        fetch_successful_signatures(rpc_client, swap, args.scan_tx_count as usize, delay_ms)
+            .await?;
+    tracing::info!(
+        "Fetched {} successful signatures",
+        successful_signatures.len()
+    );
+
+    if successful_signatures.is_empty() {
+        tracing::warn!("No successful signatures found");
+        return Ok(Vec::new());
+    }
+
+    let parsed_txs = shyft_api
+        .get_transaction_parse_selected(
+            &successful_signatures
+                [..std::cmp::min(successful_signatures.len(), args.scan_tx_count as usize)],
+            Some(true),
+            None,
+        )
+        .await?;
+
+    Ok(filter_buys(parsed_txs))
+}
+
+/// Fetches successful transaction signatures for a given swap.
+///
+/// This function retrieves the transaction signatures for the specified token address
+/// and filters the signatures to include only those that are successful.
+///
+/// # Arguments
+///
+/// * `rpc_client` - A reference to the Solana RPC client.
+/// * `swap` - A reference to the swap transaction details.
+/// * `scan_tx_count` - The number of transaction signatures to scan.
+/// * `delay_ms` - The delay in milliseconds between requests.
+///
+/// # Errors
+///
+/// This function will return an error if the Solana RPC request fails.
+async fn fetch_successful_signatures(
+    rpc_client: &RpcClient,
+    swap: &models::feed::Swap,
+    scan_tx_count: usize,
+    delay_ms: u64,
+) -> Result<Vec<String>, solana_client::client_error::ClientError> {
+    let mut successful_signatures = Vec::new();
+
+    let mut before_tx = Signature::from_str(&swap.tx_hash).unwrap();
+    while successful_signatures.len() < scan_tx_count {
+        let tx_signatures = rpc_client
+            .get_signatures_for_address_with_config(
+                &Pubkey::from_str(&swap.token1_address).unwrap(),
+                GetConfirmedSignaturesForAddress2Config {
+                    before: Some(before_tx),
+                    until: None,
+                    limit: None,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                },
             )
-            .await?,
-    ))
+            .await?;
+
+        tracing::debug!("Fetched {} signatures", tx_signatures.len());
+
+        if tx_signatures.is_empty() {
+            break;
+        }
+        before_tx = Signature::from_str(&tx_signatures.last().unwrap().signature).unwrap();
+
+        for signature in tx_signatures.iter() {
+            if signature.err.is_none() {
+                successful_signatures.push(signature.signature.to_string());
+            }
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
+    }
+
+    Ok(successful_signatures)
 }
 
 /// Filters transactions to include only those that involve a swap where SOL is the input token.
