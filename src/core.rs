@@ -229,9 +229,14 @@ async fn fetch_successful_signatures(
 
     let mut before_tx = Signature::from_str(&swap.tx_hash).unwrap();
     while successful_signatures.len() < scan_tx_count {
+        let token1_address = if swap.token1_address == "native" {
+            "So11111111111111111111111111111111111111112"
+        } else {
+            &swap.token1_address
+        };
         let tx_signatures = rpc_client
             .get_signatures_for_address_with_config(
-                &Pubkey::from_str(&swap.token1_address).unwrap(),
+                &Pubkey::from_str(token1_address).unwrap(),
                 GetConfirmedSignaturesForAddress2Config {
                     before: Some(before_tx),
                     until: None,
